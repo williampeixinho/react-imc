@@ -14,24 +14,33 @@ function classificar(imc) {
   return faixa ? faixa.label : "—";
 }
 
+function toNumber(v) {
+  const s = String(v ?? "").trim().replace(",", ".");
+  const n = Number(s);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+function alturaEmMetros(a) {
+  if (!Number.isFinite(a)) return NaN;
+  return a > 3 ? a / 100 : a;
+}
+
 export default function App() {
   const [altura, setAltura] = useState("");
   const [peso, setPeso] = useState("");
 
   const { imc, classificacao, erro } = useMemo(() => {
-    const a = Number(altura);
-    const p = Number(peso);
-
     if (!altura || !peso) return { imc: null, classificacao: "—", erro: "" };
+
+    const aDigitada = toNumber(altura);
+    const p = toNumber(peso);
+    const a = alturaEmMetros(aDigitada);
+
     if (!Number.isFinite(a) || !Number.isFinite(p)) return { imc: null, classificacao: "—", erro: "Valores inválidos." };
     if (a <= 0 || p <= 0) return { imc: null, classificacao: "—", erro: "Altura e peso precisam ser maiores que zero." };
 
     const valor = p / (a * a);
-    return {
-      imc: valor,
-      classificacao: classificar(valor),
-      erro: "",
-    };
+    return { imc: valor, classificacao: classificar(valor), erro: "" };
   }, [altura, peso]);
 
   const imcFormatado = imc === null ? "—" : imc.toFixed(2);
@@ -40,18 +49,17 @@ export default function App() {
     <main className="container">
       <header className="header">
         <h1>Calculadora de IMC</h1>
-        <p>Digite altura (m) e peso (kg). O resultado atualiza automaticamente.</p>
+        <p>Digite altura (m ou cm) e peso (kg). O resultado atualiza automaticamente.</p>
       </header>
 
       <section className="card">
         <div className="grid">
           <label className="field">
-            <span>Altura (m)</span>
+            <span>Altura (m ou cm)</span>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              step="0.01"
-              placeholder="Ex: 1.75"
+              placeholder="Ex: 1,69 ou 169"
               value={altura}
               onChange={(e) => setAltura(e.target.value)}
             />
@@ -60,9 +68,8 @@ export default function App() {
           <label className="field">
             <span>Peso (kg)</span>
             <input
-              type="number"
+              type="text"
               inputMode="decimal"
-              step="0.1"
               placeholder="Ex: 70"
               value={peso}
               onChange={(e) => setPeso(e.target.value)}
